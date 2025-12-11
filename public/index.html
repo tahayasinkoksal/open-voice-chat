@@ -1,0 +1,1322 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sesli Sohbet | Güvenli ve Hızlı İletişim</title>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://unpkg.com/peerjs@1.5.1/dist/peerjs.min.js"></script>
+    <style>
+        :root {
+            --bg-color: #121212;
+            --card-bg: #1e1e1e;
+            --text-color: #e0e0e0;
+            --accent-color: #00e676;
+            --danger-color: #ff1744;
+            --chat-bg: #222;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Warning & Overlay */
+        #https-warning {
+            display: none;
+            background-color: var(--danger-color);
+            color: white;
+            text-align: center;
+            padding: 10px;
+            font-weight: bold;
+            font-size: 14px;
+            z-index: 3000;
+        }
+
+        #login-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+
+        .login-box {
+            background: var(--card-bg);
+            padding: 3rem;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            width: 320px;
+            border: 1px solid #333;
+        }
+
+        input,
+        select {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            background: #2a2a2a;
+            border: 1px solid #444;
+            color: white;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background: var(--accent-color);
+            color: #000;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 16px;
+            margin-top: 10px;
+            transition: 0.2s;
+        }
+
+        button:hover {
+            filter: brightness(1.1);
+        }
+
+        button:disabled {
+            background: #555;
+            color: #888;
+            cursor: not-allowed;
+        }
+
+        #password-input {
+            display: none;
+        }
+
+        /* Main UI Layout */
+        #app-container {
+            display: none;
+            flex-direction: row;
+            height: 100%;
+            padding-bottom: 25px;
+        }
+
+        /* Left Side: Video Grid */
+        #main-content {
+            flex: 2;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid #333;
+        }
+
+        header {
+            padding: 15px 20px;
+            background: var(--card-bg);
+            border-bottom: 1px solid #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        #user-grid {
+            flex-grow: 1;
+            padding: 20px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 20px;
+            align-content: start;
+            overflow-y: auto;
+            transition: height 0.3s ease;
+        }
+
+        /* Cinema Mode Stage */
+        #screen-stage {
+            display: none;
+            /* Hidden by default */
+            flex-direction: column;
+            background: #000;
+            border-bottom: 2px solid var(--accent-color);
+            padding: 10px;
+            text-align: center;
+            height: 60%;
+            /* Take up significant space */
+        }
+
+        #screen-stage video {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            border-radius: 8px;
+        }
+
+        #screen-stage-label {
+            color: var(--accent-color);
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        /* When stage is active, grid shrinks */
+        .stage-active #user-grid {
+            height: 40%;
+            flex-grow: 0;
+            border-top: 1px solid #333;
+        }
+
+        /* User Card Styles */
+        .user-card {
+            background: var(--card-bg);
+            padding: 15px;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            border: 1px solid #333;
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .user-card:hover {
+            border-color: #555;
+        }
+
+        .avatar-img {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            border: 2px solid var(--accent-color);
+            margin-bottom: 10px;
+            background: #000;
+            object-fit: cover;
+        }
+
+        .user-video {
+            width: 100%;
+            max-width: 250px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border: 2px solid var(--accent-color);
+            background: #000;
+            display: none;
+        }
+
+        .user-name {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .user-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        input[type=range] {
+            flex-grow: 1;
+            height: 4px;
+            padding: 0;
+            margin: 0;
+            background: #555;
+            accent-color: var(--accent-color);
+        }
+
+        .mute-btn-small {
+            background: transparent;
+            border: 1px solid #555;
+            color: #ccc;
+            padding: 5px;
+            width: 30px;
+            height: 30px;
+            margin: 0;
+            font-size: 14px;
+            border-radius: 4px;
+        }
+
+        .mute-btn-small:hover {
+            background: #333;
+        }
+
+        .is-muted {
+            color: var(--danger-color);
+            border-color: var(--danger-color);
+        }
+
+        /* Kick Button */
+        .kick-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: transparent;
+            border: none;
+            font-size: 16px;
+            cursor: pointer;
+            opacity: 0.5;
+            transition: 0.2s;
+            padding: 0;
+            width: 20px;
+            height: 20px;
+        }
+
+        .kick-btn:hover {
+            opacity: 1;
+            transform: scale(1.1);
+        }
+
+        /* Right Side: Chat */
+        #chat-panel {
+            flex: 1;
+            min-width: 300px;
+            max-width: 400px;
+            background: var(--chat-bg);
+            display: flex;
+            flex-direction: column;
+            border-left: 1px solid #333;
+        }
+
+        #chat-messages {
+            flex-grow: 1;
+            padding: 15px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .message {
+            font-size: 14px;
+            line-height: 1.4;
+            word-wrap: break-word;
+        }
+
+        .msg-time {
+            color: #666;
+            font-size: 11px;
+            margin-right: 5px;
+        }
+
+        .msg-user {
+            color: var(--accent-color);
+            font-weight: bold;
+            margin-right: 5px;
+        }
+
+        .msg-system {
+            color: #888;
+            font-style: italic;
+            text-align: center;
+            font-size: 12px;
+            margin: 5px 0;
+        }
+
+        #chat-input-area {
+            padding: 15px;
+            background: var(--card-bg);
+            border-top: 1px solid #333;
+            display: flex;
+            gap: 10px;
+        }
+
+        #message-input {
+            margin: 0;
+            padding: 10px;
+        }
+
+        /* Vote Modal */
+        #vote-modal {
+            display: none;
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #2a2a2a;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.8);
+            z-index: 4000;
+            text-align: center;
+            border: 1px solid #444;
+            width: 300px;
+        }
+
+        #vote-timer {
+            height: 4px;
+            background: var(--accent-color);
+            width: 100%;
+            margin-top: 10px;
+            transition: width 30s linear;
+        }
+
+        .vote-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .vote-btn-yes {
+            background: var(--accent-color);
+            color: black;
+            flex: 1;
+        }
+
+        .vote-btn-no {
+            background: var(--danger-color);
+            color: white;
+            flex: 1;
+        }
+
+        /* Footer */
+        .developer-footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            text-align: center;
+            padding: 8px;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.7);
+            background: rgba(18, 18, 18, 0.95);
+            z-index: 5000;
+            border-top: 1px solid #333;
+        }
+
+        .developer-footer a {
+            color: inherit;
+            text-decoration: none;
+            font-weight: bold;
+            transition: color 0.3s;
+        }
+
+        .developer-footer a:hover {
+            color: var(--accent-color);
+        }
+
+        /* Settings Toggle */
+        .settings-area {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+            font-size: 12px;
+            color: #aaa;
+        }
+
+        .checkbox-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+        }
+
+        /* Toast Notification */
+        #notification-toast {
+            display: none;
+            position: fixed;
+            top: 70px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--accent-color);
+            color: black;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-weight: bold;
+            z-index: 6000;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+            cursor: pointer;
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            #app-container {
+                flex-direction: column;
+                padding-bottom: 30px;
+            }
+
+            #chat-panel {
+                max-width: none;
+                height: 40%;
+                min-height: 200px;
+            }
+
+            #main-content {
+                height: 60%;
+            }
+        }
+
+        .main-controls {
+            padding: 15px;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            background: var(--card-bg);
+            border-top: 1px solid #333;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="https-warning">
+        ⚠️ Mikrofon izni için HTTPS gereklidir. Localhost veya Cloudflare Tunnel kullanın.
+    </div>
+
+    <!-- Toast -->
+    <div id="notification-toast" onclick="window.location.reload()">
+        🎤 Mikrofon algılandı! Katılmak için tıklayın.
+    </div>
+
+    <!-- Vote Modal -->
+    <div id="vote-modal">
+        <h3 id="vote-text" style="margin:0; color:white;">Oy Ver: ...</h3>
+        <p style="margin:5px 0; color:#aaa; font-size:12px;" id="vote-subtext">Kullanıcıyı atmak istiyor musunuz?</p>
+        <div class="vote-actions" id="vote-buttons">
+            <button class="vote-btn-yes" onclick="submitVote(true)">Evet</button>
+            <button class="vote-btn-no" onclick="submitVote(false)">Hayır</button>
+        </div>
+        <div id="vote-status" style="display:none; margin-top:15px; font-weight:bold; color:#ccc;">
+            Oyunuz alındı, sonuç bekleniyor...
+        </div>
+        <div id="vote-timer-bar-container" style="background:#444; height:4px; margin-top:10px; border-radius:2px;">
+            <div id="vote-timer"></div>
+        </div>
+    </div>
+
+    <!-- Login -->
+    <div id="login-overlay">
+        <div class="login-box">
+            <h2>🎙️ Sesli Sohbet</h2>
+            <input type="text" id="nickname-input" placeholder="Kullanıcı Adı" value="Misafir">
+            <select id="room-select" onchange="checkRoomLock()">
+                <option value="" disabled selected>Odalar Yükleniyor...</option>
+            </select>
+            <input type="password" id="password-input" placeholder="Oda Şifresi">
+            <button id="join-btn" onclick="startApp()">Odaya Katıl</button>
+            <div class="settings-area" style="justify-content: center;">
+                <label class="checkbox-wrapper">
+                    <input type="checkbox" id="sound-toggle-login" checked> 🔊 Bildirim Sesleri
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main UI -->
+    <div id="app-container">
+
+        <!-- Video/User Section -->
+        <div id="main-content">
+            <header>
+                <h3 id="room-display" style="margin:0">Oda: ...</h3>
+                <div style="display:flex; gap:15px; align-items:center;">
+                    <label class="checkbox-wrapper" title="Giriş/Çıkış Sesleri">
+                        <input type="checkbox" id="sound-toggle-main" checked onchange="syncSoundToggle(this)"> 🔔
+                    </label>
+                    <div style="font-size:12px; color:#888;">🟢 Bağlandı</div>
+                </div>
+            </header>
+
+            <!-- Stage for Cinema Mode -->
+            <div id="screen-stage">
+                <div id="screen-stage-label">🖥️ Ekran Paylaşımı</div>
+                <video id="stage-video" autoplay playsinline></video>
+            </div>
+
+            <div id="user-grid">
+            </div>
+
+            <div class="main-controls">
+                <button onclick="toggleMyMute()" id="my-mute-btn" style="width:auto; margin:0; padding:10px 25px;">
+                    🎤 Sustur
+                </button>
+                <button onclick="window.location.reload()"
+                    style="background:var(--danger-color); width:auto; margin:0; padding:10px 25px;">
+                    🚪 Ayrıl
+                </button>
+            </div>
+        </div>
+
+        <!-- Chat Section -->
+        <div id="chat-panel">
+            <div id="chat-messages">
+                <div class="msg-system">Sohbete hoş geldiniz!</div>
+            </div>
+            <div id="chat-input-area">
+                <input type="text" id="message-input" placeholder="Bir mesaj yaz..." onkeypress="handleEnter(event)">
+                <button onclick="sendMessage()" style="width: auto; margin:0;">Gönder</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="developer-footer">
+        Developer by <a href="https://tahayasinkoksal.com.tr/" target="_blank">TAHA YASİN KÖKSAL</a> • v1.0
+    </div>
+
+    <script>
+        // --- Sounds (Base64) ---
+        const SOUND_JOIN = "data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbqWEyM2KonIyHaTczYKiTipdoNjNgqJOJl2g3M2Cok4mXaDczYKiTipdoNjNgqJOJl2g3M2Cok4mXaDczYKiTipdoNjNgqJOJl2g3M2Cok4mXaDczYAAAAAA=";
+        const SOUND_LEAVE = "data:audio/wav;base64,UklGRlVsAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQ1sAAB1d3mDeXN1d3mDeXN1d3mDeXN1d3mDeXN1d3mDeXN1d3mDeXN1d3mDAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
+
+        // --- Globals ---
+        let socket;
+        let myPeer;
+        let myStream;
+        let localScreenStream = null; // Screen share stream
+        let audioMixerContext = null; // Audio Mixer Context
+        let mixedAudioStream = null;  // Mixed Stream (Mic + System)
+        let availableRooms = [];
+        let myNickname = "Misafir";
+        let soundsEnabled = true;
+        let isListener = false;
+        const nicknames = {};
+        const activeCalls = {}; // Keep track of active MediaConnections
+
+        // --- Init ---
+        window.onload = async function () {
+            // HTTPS/Localhost Kontrolü
+            if (!window.isSecureContext) {
+                document.getElementById('https-warning').style.display = 'block';
+                document.getElementById('join-btn').disabled = true;
+                return;
+            }
+
+            const t1 = document.getElementById('sound-toggle-login');
+            const t2 = document.getElementById('sound-toggle-main');
+            if (t1) t1.addEventListener('change', (e) => { soundsEnabled = e.target.checked; if (t2) t2.checked = e.target.checked; });
+            if (t2) t2.addEventListener('change', (e) => { soundsEnabled = e.target.checked; if (t1) t1.checked = e.target.checked; });
+
+            try {
+                const res = await fetch('/rooms');
+                availableRooms = await res.json();
+                const select = document.getElementById('room-select');
+                select.innerHTML = '<option value="" disabled selected>Oda Seçiniz</option>';
+                availableRooms.forEach(r => {
+                    const opt = document.createElement('option');
+                    opt.value = r.id;
+                    opt.innerText = r.isLocked ? `🔒 ${r.name}` : r.name;
+                    select.appendChild(opt);
+                });
+            } catch (e) { console.error("Odalar yüklenemedi", e); }
+
+            // Device Change Listener (Hot-plugging)
+            navigator.mediaDevices.ondevicechange = async () => {
+                if (isListener) {
+                    try {
+                        const devices = await navigator.mediaDevices.enumerateDevices();
+                        const hasMic = devices.some(d => d.kind === 'audioinput');
+                        if (hasMic) {
+                            document.getElementById('notification-toast').style.display = 'block';
+                        }
+                    } catch (e) { console.warn(e); }
+                }
+            };
+        };
+
+        function syncSoundToggle(el) {
+            soundsEnabled = el.checked;
+            const loginToggle = document.getElementById('sound-toggle-login');
+            if (loginToggle) loginToggle.checked = el.checked;
+        }
+
+        function playSound(type) {
+            if (!soundsEnabled) return;
+            try {
+                const audio = new Audio(type === 'join' ? SOUND_JOIN : SOUND_LEAVE);
+                audio.volume = 0.3;
+                audio.play().catch(e => console.log("Audio play blocked", e));
+            } catch (e) { console.error(e); }
+        }
+
+        function checkRoomLock() {
+            const rid = document.getElementById('room-select').value;
+            const r = availableRooms.find(x => x.id === rid);
+            document.getElementById('password-input').style.display = (r && r.isLocked) ? 'block' : 'none';
+        }
+
+        // --- Core Logic ---
+        async function startApp() {
+            myNickname = document.getElementById('nickname-input').value.trim() || "Misafir";
+            const roomId = document.getElementById('room-select').value;
+            const password = document.getElementById('password-input').value;
+
+            if (!roomId) return alert("Lütfen bir oda seçin!");
+
+            const joinBtn = document.getElementById('join-btn');
+            joinBtn.innerText = "Bağlanıyor...";
+            joinBtn.disabled = true;
+
+            try {
+                // MİKROFONU DENE
+                myStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                isListener = false;
+            } catch (err) {
+                console.warn("Mikrofon hatası:", err);
+
+                // Eğer mikrofon bulunamazsa (NotFoundError) veya erişim reddedilirse
+                const proceed = confirm(`Mikrofon bulunamadı veya izin verilmedi (${err.name}).\n\nSadece DİNLEYİCİ olarak katılmak ister misiniz?`);
+
+                if (proceed) {
+                    // Boş (Sessiz) bir ses kanalı oluştur (Dummy Stream)
+                    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                    const oscillator = ctx.createOscillator();
+                    const dest = ctx.createMediaStreamDestination();
+                    oscillator.connect(dest);
+                    myStream = dest.stream;
+                    myStream.getAudioTracks()[0].enabled = false;
+                    isListener = true;
+                    // Hide Mute Btn
+                    document.getElementById('my-mute-btn').style.display = 'none';
+                } else {
+                    joinBtn.disabled = false;
+                    joinBtn.innerText = "Odaya Katıl";
+                    return;
+                }
+            }
+
+            try {
+                const isSecure = window.location.protocol === 'https:';
+                myPeer = new Peer(undefined, {
+                    host: window.location.hostname,
+                    port: isSecure ? 443 : 3000,
+                    path: '/peerjs',
+                    secure: isSecure
+                });
+
+                myPeer.on('open', id => initSocket(roomId, id, password));
+
+                myPeer.on('call', call => {
+                    // Answer with our current stream (Audio only OR Audio+Screen)
+                    const streamToAnswer = localScreenStream ? localScreenStream : myStream;
+                    call.answer(streamToAnswer);
+
+                    // Register call
+                    activeCalls[call.peer] = call;
+
+                    call.on('stream', stream => {
+                        const name = nicknames[call.peer] || "Misafir";
+                        addUser(stream, call.peer, name);
+                    });
+
+                    // When call closes, we might NOT want to remove the user card if they are just renegotiating
+                    call.on('close', () => {
+                        // We do NOT remove user card here automatically anymore, 
+                        // because we might be just switching streams.
+                        // We clean up video elements though.
+                        const videoEl = document.getElementById(`video-${call.peer}`);
+                        if (videoEl) videoEl.style.display = 'none';
+                        const avatarEl = document.getElementById(`avatar-${call.peer}`);
+                        if (avatarEl) avatarEl.style.display = 'block';
+                    });
+
+                    call.on('error', (err) => {
+                        console.error("Call error:", err);
+                    });
+                });
+
+                myPeer.on('error', e => {
+                    console.error("Peer Error", e);
+                    if (e.type !== 'peer-unavailable') alert("Bağlantı Hatası: " + e.type);
+                });
+
+            } catch (err) {
+                alert("Bağlantı başlatılamadı: " + err.message);
+                joinBtn.disabled = false;
+                joinBtn.innerText = "Odaya Katıl";
+            }
+        }
+
+        function initSocket(roomId, id, password) {
+            socket = io('/', {
+                transports: ['polling', 'websocket'], // Fix: Polling first is more stable behind proxies
+                reconnectionAttempts: 5,
+                timeout: 10000
+            });
+            socket.emit('join-room', { roomId, peerId: id, nickname: myNickname, password });
+
+            socket.on('joined-room', (data) => {
+                // Handle new object payload or legacy string
+                let rId = data;
+                if (typeof data === 'object') {
+                    rId = data.roomId;
+                    if (data.nickname) myNickname = data.nickname;
+                }
+
+                document.getElementById('login-overlay').style.display = 'none';
+                document.getElementById('app-container').style.display = 'flex';
+
+                const roomName = availableRooms.find(r => r.id === rId)?.name || rId;
+                document.getElementById('room-display').innerText = `Oda: ${roomName}`;
+
+                // Add system message
+                const box = document.getElementById('chat-messages');
+                box.innerHTML = `<div class="msg-system">Sohbete hoş geldiniz, <b>${myNickname}</b>!</div>`;
+
+                // Kendi kartımızı ekle
+                addUser(myStream, id, myNickname, true);
+
+                addSystemMsg(`${roomId} odasına katıldınız`);
+                playSound('join');
+            });
+
+            socket.on('existing-users', (userList) => {
+                Object.assign(nicknames, userList);
+                for (const [pid, name] of Object.entries(userList)) {
+                    updateUserCardName(pid, name);
+                }
+            });
+
+            socket.on('error', msg => { alert("Hata: " + msg); window.location.reload(); });
+
+            socket.on('user-connected', (uid, name) => {
+                nicknames[uid] = name;
+                addSystemMsg(`${name} odaya katıldı`);
+                playSound('join');
+                // Yeni geleni biz arıyoruz
+                const streamToCall = localScreenStream ? localScreenStream : myStream;
+                const call = myPeer.call(uid, streamToCall);
+                activeCalls[uid] = call;
+
+                call.on('stream', s => addUser(s, uid, name));
+
+                call.on('close', () => {
+                    // Same logic: don't auto remove generic user logic here
+                    const videoEl = document.getElementById(`video-${uid}`);
+                    if (videoEl) videoEl.style.display = 'none';
+                    const avatarEl = document.getElementById(`avatar-${uid}`);
+                    if (avatarEl) avatarEl.style.display = 'block';
+                });
+                call.on('close', () => removeUser(uid));
+            });
+
+            // --- RESTORED CHAT LISTENER ---
+            socket.on('chat-message', (data) => {
+                const div = document.createElement('div');
+                div.className = 'message';
+                div.innerHTML = `<span class="msg-time">${data.time}</span><span class="msg-user">${data.user}:</span> ${data.text}`;
+                const box = document.getElementById('chat-messages');
+                if (box) {
+                    box.appendChild(div);
+                    box.scrollTop = box.scrollHeight;
+                }
+            });
+
+            socket.on('user-disconnected', uid => {
+                removeUser(uid);
+                delete nicknames[uid];
+            });
+
+            // Vote Events
+            socket.on('vote-started', ({ targetName, targetId }) => {
+                showVoteModal(targetName, targetId);
+            });
+
+            socket.on('vote-ended', () => {
+                // Close modal
+                document.getElementById('vote-modal').style.display = 'none';
+            });
+
+            socket.on('kick-user', (targetId) => {
+                if (myPeer && targetId === myPeer.id) {
+                    alert("Oy birliği ile odadan atıldınız.");
+                    window.location.reload();
+                }
+            });
+
+            socket.on('share-started', (sharerId) => {
+                lockShareButton(sharerId);
+            });
+
+            socket.on('share-ended', () => {
+                unlockShareButton();
+                // Also ensure stage is closed if logic failed elsewhere
+                closeStage();
+            });
+
+            socket.on('share-approved', () => {
+                startScreenShareActual();
+            });
+
+            socket.on('share-denied', () => {
+                alert("Şu anda başkası ekran paylaşıyor. Lütfen bekleyin.");
+                // Reset button state
+                const btn = document.getElementById('btn-share-screen');
+                if (btn) btn.classList.remove('loading'); // If we had loading state
+            });
+        }
+
+        // --- Vote UI ---
+        function startVote(targetId, targetName) {
+            if (!confirm(`${targetName} için oylama başlatılsın mı? (Bu isim spam yapıyorsa deneyin)`)) return;
+            socket.emit('start-vote', targetId);
+        }
+
+        function showVoteModal(targetName, targetId) {
+            const modal = document.getElementById('vote-modal');
+            const timer = document.getElementById('vote-timer');
+            const buttons = document.getElementById('vote-buttons');
+            const status = document.getElementById('vote-status');
+            const subtext = document.getElementById('vote-subtext');
+
+            document.getElementById('vote-text').innerText = `${targetName} atılsın mı?`;
+
+            // Checks for Target
+            if (myPeer && targetId === myPeer.id) {
+                buttons.style.display = 'none';
+                status.style.display = 'block';
+                status.innerText = "Hakkınızda oylama yapılıyor...";
+                status.style.color = 'var(--danger-color)';
+            } else {
+                buttons.style.display = 'flex';
+                status.style.display = 'none';
+            }
+
+            // Reset UI for normal voters
+            if (myPeer && targetId !== myPeer.id) {
+                subtext.innerText = "Kullanıcıyı atmak istiyor musunuz?";
+            }
+
+            modal.style.display = 'block';
+            timer.style.width = '100%';
+
+            setTimeout(() => { timer.style.width = '0%'; }, 100);
+            // Modal closes on vote-ended event or timer finish via server broadcast
+        }
+
+        function submitVote(choice) {
+            socket.emit('submit-vote', choice);
+            document.getElementById('vote-buttons').style.display = 'none';
+            const status = document.getElementById('vote-status');
+            status.style.display = 'block';
+            status.innerText = "Oyunuz alındı, sonuç bekleniyor...";
+            status.style.color = '#ccc';
+        }
+
+        // --- Chat Functions ---
+        function sendMessage() {
+            const input = document.getElementById('message-input');
+            const text = input.value.trim();
+            if (text && socket) {
+                socket.emit('chat-message', text);
+                input.value = '';
+                input.focus();
+            }
+        }
+        function handleEnter(e) { if (e.key === 'Enter') sendMessage(); }
+
+        function addSystemMsg(text) {
+            const box = document.getElementById('chat-messages');
+            if (!box) return;
+            const div = document.createElement('div');
+            div.className = 'msg-system';
+            div.innerText = text;
+            box.appendChild(div);
+            box.scrollTop = box.scrollHeight;
+        }
+
+        // --- UI/Audio Functions ---
+        // --- UI/Audio Functions ---
+        function addUser(stream, uid, name, isMe = false) {
+            // Check if card exists
+            let card = document.getElementById(`user-card-${uid}`);
+
+            // Handle Video Track presence
+            const hasVideo = stream.getVideoTracks().length > 0;
+
+            if (card) {
+                updateUserCardName(uid, name);
+                // Update media if card exists
+                if (hasVideo) {
+                    // --- CINEMA MODE LOGIC ---
+                    // Instead of putting video in card, put it in STAGE
+                    enableStage(stream, name, uid);
+
+                    // Hide avatar in card to indicate something is happening? 
+                    // Or keep avatar in card but show video on stage.
+                    // Let's keep avatar in card essentially, but maybe add an indicator.
+                    document.getElementById(`avatar-${uid}`).style.opacity = '0.5';
+                } else {
+                    // Revert to avatar logic if video stops but stream continues (unlikely with replaceTrack re-call)
+                    // If this user was on stage, remove them
+                    if (isStageActive(uid)) {
+                        disableStage();
+                    }
+                    document.getElementById(`avatar-${uid}`).style.opacity = '1';
+                }
+
+                // If it's AUDIO update, ensure audio element logic
+                let audio = document.getElementById(`audio-${uid}`);
+                if (!audio && !isMe) {
+                    audio = document.createElement('audio');
+                    audio.id = `audio-${uid}`;
+                    audio.autoplay = true;
+                    document.body.appendChild(audio);
+                }
+                if (audio) audio.srcObject = stream;
+
+                return;
+            }
+
+            // --- New User Logic ---
+
+            // Audio Element (Hidden)
+            if (!isMe) {
+                const audio = document.createElement('audio');
+                audio.srcObject = stream;
+                audio.autoplay = true;
+                audio.playsInline = true;
+                audio.id = `audio-${uid}`;
+                document.body.appendChild(audio);
+            }
+
+            const cleanName = encodeURIComponent(name);
+            const avatarUrl = `https://robohash.org/${cleanName}?set=set1&size=64x64&bgset=bg1`;
+
+            const grid = document.getElementById('user-grid');
+            card = document.createElement('div');
+            card.className = 'user-card';
+            card.id = `user-card-${uid}`;
+
+            let controlsHtml = '';
+            if (!isMe) {
+                controlsHtml = `
+                    <button class="kick-btn" title="Oylama Başlat" onclick="startVote('${uid}', '${name}')">⚠️</button>
+                    <div class="user-controls">
+                        <button class="mute-btn-small" onclick="toggleUserMute('${uid}')" id="mute-btn-${uid}">🔊</button>
+                        <input type="range" min="0" max="1" step="0.1" value="1" oninput="setVolume('${uid}', this.value)">
+                    </div>
+                `;
+            } else {
+                // Self Controls
+                const statusText = isListener ? "( Ben - 🔇 Dinleyici )" : "( Ben )";
+
+                // Screen Share Button Logic
+                // Only show if not listener AND if supported (Not Mobile)
+                let screenShareBtn = '';
+                const isMobile = !navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia;
+
+                if (!isListener && !isMobile) {
+                    screenShareBtn = `<button class="mute-btn-small" onclick="toggleScreenShare()" id="btn-share-screen" title="Ekran Paylaş" style="width:auto; padding:5px 10px;">🖥️</button>`;
+                }
+
+                controlsHtml = `
+                    <div class="user-controls" style="justify-content:center; gap:10px; margin-top:15px;">
+                       ${screenShareBtn}
+                       <span style="font-size:12px; color:#555; align-self:center;">${statusText}</span>
+                    </div>`;
+            }
+
+            card.innerHTML = `
+                <video id="video-${uid}" class="user-video" autoplay playsinline ${isMe ? 'muted' : ''}></video>
+                <img src="${avatarUrl}" class="avatar-img" alt="Avatar" id="avatar-${uid}">
+                <div class="user-name" id="name-${uid}">${name}</div>
+                ${controlsHtml}
+            `;
+            grid.appendChild(card);
+
+            // Apply Stream to Video if exists
+            if (hasVideo) {
+                enableStage(stream, name, uid);
+                document.getElementById(`avatar-${uid}`).style.opacity = '0.5';
+            }
+        }
+
+        function updateUserCardName(uid, name) {
+            const nameEl = document.getElementById(`name-${uid}`);
+            if (nameEl) nameEl.innerText = name;
+
+            const avatarEl = document.getElementById(`avatar-${uid}`);
+            if (avatarEl) {
+                const cleanName = encodeURIComponent(name);
+                avatarEl.src = `https://robohash.org/${cleanName}?set=set1&size=64x64&bgset=bg1`;
+            }
+        }
+
+        function removeUser(uid) {
+            // Robust cleanup
+            const c = document.getElementById(`user-card-${uid}`);
+            if (c) c.remove();
+
+            const a = document.getElementById(`audio-${uid}`);
+            if (a) {
+                a.srcObject = null; // stop stream
+                a.remove();
+            }
+
+            // Check Stage
+            if (isStageActive(uid)) {
+                disableStage();
+            }
+
+            if (activeCalls[uid]) delete activeCalls[uid];
+
+            playSound('leave');
+        }
+
+        window.setVolume = (uid, val) => {
+            const audio = document.getElementById(`audio-${uid}`);
+            if (audio) audio.volume = val;
+        };
+
+        window.toggleUserMute = (uid) => {
+            const audio = document.getElementById(`audio-${uid}`);
+            const btn = document.getElementById(`mute-btn-${uid}`);
+            if (audio) {
+                audio.muted = !audio.muted;
+                if (audio.muted) {
+                    btn.innerText = '🔇';
+                    btn.classList.add('is-muted');
+                } else {
+                    btn.innerText = '🔊';
+                    btn.classList.remove('is-muted');
+                }
+            }
+        };
+
+        function toggleMyMute() {
+            if (!myStream || isListener) return;
+
+            // Audio track is always 0 in the pure audio stream, 
+            // BUT in combined stream it might differ. 
+            // Better look for 'audio' kind.
+            const tracks = myStream.getAudioTracks();
+            if (tracks.length > 0) {
+                const enabled = !tracks[0].enabled;
+                tracks.forEach(t => t.enabled = enabled);
+
+                const btn = document.getElementById('my-mute-btn');
+                btn.innerText = enabled ? "🎤 Sustur" : "🔴 Sesi Aç";
+                btn.style.background = enabled ? "var(--bg-card)" : "var(--danger-color)";
+            }
+        }
+
+        // --- Screen Share Logic ---
+        async function toggleScreenShare() {
+            const btn = document.getElementById('btn-share-screen');
+            if (btn.disabled) return;
+
+            if (!localScreenStream) {
+                // Request Permission from Server first
+                socket.emit('request-share');
+            } else {
+                // STOP SHARING manually
+                stopScreenShare();
+            }
+        }
+
+        async function startScreenShareActual() {
+            try {
+                const btn = document.getElementById('btn-share-screen');
+                // 1. Get Screen Stream (Request Audio!)
+                const displayStream = await navigator.mediaDevices.getDisplayMedia({
+                    video: true,
+                    audio: true
+                });
+
+                // 2. Audio Mixing Logic (Web Audio API)
+                const videoTracks = displayStream.getVideoTracks();
+                let finalAudioTrack = null;
+
+                // Check if user shared system audio
+                const sysAudioTracks = displayStream.getAudioTracks();
+                const micAudioTracks = myStream.getAudioTracks();
+
+                if (sysAudioTracks.length > 0 && micAudioTracks.length > 0) {
+                    // MIXING REQUIRED
+                    try {
+                        audioMixerContext = new (window.AudioContext || window.webkitAudioContext)();
+                        const dest = audioMixerContext.createMediaStreamDestination();
+
+                        // Mic Source
+                        const micSource = audioMixerContext.createMediaStreamSource(myStream);
+                        micSource.connect(dest);
+
+                        // System Audio Source
+                        const sysSource = audioMixerContext.createMediaStreamSource(displayStream);
+                        sysSource.connect(dest);
+
+                        finalAudioTrack = dest.stream.getAudioTracks()[0];
+                        mixedAudioStream = dest.stream;
+
+                        // Important: If system audio track ends (unlikely alone), handle it? 
+                        // Actually main handling is on Video Track ending.
+
+                    } catch (err) {
+                        console.error("Audio Mixing Failed, falling back to mic:", err);
+                        finalAudioTrack = micAudioTracks[0];
+                    }
+                } else if (micAudioTracks.length > 0) {
+                    // No System Audio, Just Mic
+                    finalAudioTrack = micAudioTracks[0];
+                } else {
+                    alert("Ses kaynağı bulunamadı (Mikrofon erişimi yok).");
+                    socket.emit('stop-share');
+                    return;
+                }
+
+                // 3. Create Final Stream
+                localScreenStream = new MediaStream([videoTracks[0], finalAudioTrack]);
+
+                // 4. Handle Local Stop
+                videoTracks[0].onended = () => {
+                    stopScreenShare();
+                };
+
+                // 5. Update Self UI -> STAGE
+                // Note: We intentionally mute the Stage Video (local preview) to avoid self-echo,
+                // but we might want to hear system audio? 
+                // Usually self-preview is muted. If user wants to hear system audio they hear it from source app.
+                enableStage(localScreenStream, myNickname, myPeer.id);
+
+                btn.classList.add('is-muted');
+                btn.style.background = "var(--accent-color)";
+                btn.style.color = "black";
+
+                // 6. Re-Call everyone
+                reCallAllPeers(localScreenStream);
+
+            } catch (err) {
+                console.error("Screen share error:", err);
+                socket.emit('stop-share'); // Release lock if user canceled
+            }
+        }
+
+        function stopScreenShare() {
+            if (!localScreenStream) return;
+
+            // 1. Stop video tracks
+            localScreenStream.getVideoTracks().forEach(t => t.stop());
+
+            // Allow system audio track to stop too if it was raw, 
+            // but if mixed, we close context below.
+            localScreenStream.getAudioTracks().forEach(t => t.stop());
+
+            localScreenStream = null;
+
+            // 2. Clean up Mixer
+            if (audioMixerContext) {
+                audioMixerContext.close();
+                audioMixerContext = null;
+                mixedAudioStream = null;
+            }
+
+            // 3. Server Notify
+            socket.emit('stop-share');
+
+            // 4. Disable Stage
+            disableStage();
+
+            // 5. Reset Button
+            const btn = document.getElementById('btn-share-screen');
+            if (btn) {
+                btn.classList.remove('is-muted');
+                btn.style.background = "";
+                btn.style.color = "";
+            }
+
+            // 6. Re-Call everyone with Processed Audio Stream (myStream)
+            reCallAllPeers(myStream);
+        }
+
+        // --- Cinema Mode Helpers ---
+        let currentStageId = null;
+
+        function enableStage(stream, userName, uid) {
+            const stage = document.getElementById('screen-stage');
+            const video = document.getElementById('stage-video');
+            const label = document.getElementById('screen-stage-label');
+            const mainContent = document.getElementById('main-content');
+
+            stage.style.display = 'flex';
+            video.srcObject = new MediaStream(stream.getVideoTracks()); // Video Only for stage
+            video.muted = true; // Audio is handled via separate audio element or user card
+            label.innerText = `🖥️ ${userName} Ekranını Paylaşıyor`;
+
+            mainContent.classList.add('stage-active');
+            currentStageId = uid;
+        }
+
+        function disableStage() {
+            const stage = document.getElementById('screen-stage');
+            const video = document.getElementById('stage-video');
+            const mainContent = document.getElementById('main-content');
+
+            stage.style.display = 'none';
+            video.srcObject = null;
+            mainContent.classList.remove('stage-active');
+            currentStageId = null;
+        }
+
+        function isStageActive(uid) {
+            return currentStageId === uid;
+        }
+
+        function closeStage() {
+            disableStage();
+        }
+
+        function lockShareButton(sharerId) {
+            const btn = document.getElementById('btn-share-screen');
+            if (!btn) return;
+
+            if (myPeer.id === sharerId) return; // Don't lock for self (handled by state)
+
+            btn.disabled = true;
+            btn.title = "Başka biri ekran paylaşıyor";
+            btn.style.opacity = '0.5';
+            btn.style.cursor = 'not-allowed';
+        }
+
+        function unlockShareButton() {
+            const btn = document.getElementById('btn-share-screen');
+            if (!btn) return;
+
+            btn.disabled = false;
+            btn.title = "Ekran Paylaş";
+            btn.style.opacity = '1';
+            btn.style.cursor = 'pointer';
+        }
+
+        function reCallAllPeers(newStream) {
+            // Close existing calls (MediaConnections)
+            Object.values(activeCalls).forEach(call => {
+                call.close();
+            });
+            // Clear activeCalls list (will fill up again)
+            // Note: We do NOT remove the User Cards.
+
+            // Re-Call all users in 'nicknames' list except self
+            Object.keys(nicknames).forEach(peerId => {
+                if (peerId === myPeer.id) return;
+
+                const call = myPeer.call(peerId, newStream);
+                activeCalls[peerId] = call;
+
+                const name = nicknames[peerId];
+
+                call.on('stream', stream => {
+                    addUser(stream, peerId, name);
+                });
+
+                call.on('close', () => {
+                    const videoEl = document.getElementById(`video-${peerId}`);
+                    if (videoEl) videoEl.style.display = 'none';
+                    const avatarEl = document.getElementById(`avatar-${peerId}`);
+                    if (avatarEl) avatarEl.style.display = 'block';
+                });
+            });
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,12 @@
+[
+    {
+        "id": "lobby",
+        "name": "Lobby (Public)",
+        "password": null
+    },
+    {
+        "id": "vip",
+        "name": "VIP Room (Private)",
+        "password": "admin"
+    }
+]

@@ -1,0 +1,11 @@
+version: '3.8'
+
+services:
+  voice-chat:
+    build: .
+    container_name: voice-chat-container
+    ports:
+      - "3005:3000"
+    restart: always
+    volumes:
+      - ./config/rooms.json:/app/config/rooms.json
