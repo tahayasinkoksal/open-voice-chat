@@ -87,6 +87,37 @@ app.get('/rooms', (req, res) => {
   res.json(sanitizedRooms);
 });
 
+// API: Get Reactions (Tepkiler)
+app.get('/api/tepkiler', (req, res) => {
+  try {
+    const tepkilerPath = path.join(__dirname, 'public/tepkiler');
+    const files = fs.readdirSync(tepkilerPath);
+    
+    const reactions = files
+      .filter(file => file.endsWith('.mp3'))
+      .map(file => {
+        // Convert filename to display name
+        // "ya-sabir.mp3" -> "Ya Sabir"
+        const nameWithoutExt = file.replace('.mp3', '');
+        const displayName = nameWithoutExt
+          .split('-')
+          .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+          .join(' ');
+        
+        return {
+          id: file,
+          name: displayName,
+          url: `/tepkiler/${file}`
+        };
+      });
+    
+    res.json(reactions);
+  } catch (err) {
+    console.error('Error loading reactions:', err);
+    res.json([]);
+  }
+});
+
 app.get('/*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public/index.html'));
 });
@@ -169,6 +200,16 @@ io.on('connection', socket => {
       io.to(roomId).emit('chat-message', {
         user: nickname,
         text: cleanMsg,
+        time: new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })
+      });
+    });
+
+    // Reaction Handler
+    socket.on('play-reaction', (reactionUrl) => {
+      // Broadcast to everyone in the room including sender
+      io.to(roomId).emit('reaction-played', {
+        user: nickname,
+        url: reactionUrl,
         time: new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })
       });
     });

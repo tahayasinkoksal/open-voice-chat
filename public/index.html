@@ -9,12 +9,15 @@
     <script src="https://unpkg.com/peerjs@1.5.1/dist/peerjs.min.js"></script>
     <style>
         :root {
-            --bg-color: #121212;
-            --card-bg: #1e1e1e;
-            --text-color: #e0e0e0;
-            --accent-color: #00e676;
-            --danger-color: #ff1744;
-            --chat-bg: #222;
+            --bg-color: #0a0a0f;
+            --card-bg: #12121a;
+            --text-color: #eaeaea;
+            --accent-color: #8b5cf6;
+            --accent-secondary: #06b6d4;
+            --danger-color: #ef4444;
+            --chat-bg: #0f0f18;
+            --border-color: rgba(139, 92, 246, 0.2);
+            --glow-color: rgba(139, 92, 246, 0.4);
         }
 
         body {
@@ -32,11 +35,11 @@
         /* Warning & Overlay */
         #https-warning {
             display: none;
-            background-color: var(--danger-color);
+            background: linear-gradient(135deg, var(--danger-color), #dc2626);
             color: white;
             text-align: center;
-            padding: 10px;
-            font-weight: bold;
+            padding: 12px;
+            font-weight: 600;
             font-size: 14px;
             z-index: 3000;
         }
@@ -47,7 +50,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.95);
+            background: linear-gradient(135deg, rgba(10, 10, 15, 0.98) 0%, rgba(18, 18, 30, 0.98) 100%);
             display: flex;
             justify-content: center;
             align-items: center;
@@ -55,50 +58,90 @@
         }
 
         .login-box {
-            background: var(--card-bg);
-            padding: 3rem;
-            border-radius: 12px;
+            background: rgba(18, 18, 26, 0.9);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            padding: 2.5rem;
+            border-radius: 20px;
             text-align: center;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
-            width: 320px;
-            border: 1px solid #333;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), 0 0 40px var(--glow-color);
+            width: 340px;
+            border: 1px solid var(--border-color);
+            animation: fadeInUp 0.5s ease-out;
+        }
+
+        .login-box h2 {
+            background: linear-gradient(135deg, var(--accent-color), var(--accent-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-size: 1.8rem;
+            margin-bottom: 1.5rem;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         input,
         select {
             width: 100%;
-            padding: 12px;
+            padding: 14px 16px;
             margin: 10px 0;
-            background: #2a2a2a;
-            border: 1px solid #444;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             color: white;
-            border-radius: 6px;
+            border-radius: 12px;
             box-sizing: border-box;
-            font-size: 16px;
+            font-size: 15px;
+            transition: all 0.3s ease;
+        }
+
+        input:focus,
+        select:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2);
+            background: rgba(255, 255, 255, 0.08);
         }
 
         button {
             width: 100%;
-            padding: 12px;
-            background: var(--accent-color);
-            color: #000;
+            padding: 14px;
+            background: linear-gradient(135deg, var(--accent-color), var(--accent-secondary));
+            color: #fff;
             border: none;
-            border-radius: 6px;
+            border-radius: 12px;
             cursor: pointer;
-            font-weight: bold;
-            font-size: 16px;
-            margin-top: 10px;
-            transition: 0.2s;
+            font-weight: 600;
+            font-size: 15px;
+            margin-top: 12px;
+            transition: all 0.3s ease;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
         }
 
         button:hover {
-            filter: brightness(1.1);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(139, 92, 246, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
         }
 
         button:disabled {
-            background: #555;
-            color: #888;
+            background: #333;
+            color: #666;
             cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
         }
 
         #password-input {
@@ -118,16 +161,33 @@
             flex: 2;
             display: flex;
             flex-direction: column;
-            border-right: 1px solid #333;
+            border-right: 1px solid var(--border-color);
+            background: linear-gradient(180deg, var(--bg-color) 0%, rgba(15, 15, 25, 1) 100%);
         }
 
         header {
-            padding: 15px 20px;
-            background: var(--card-bg);
-            border-bottom: 1px solid #333;
+            padding: 12px 20px;
+            background: rgba(18, 18, 26, 0.8);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border-color);
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        header h3 {
+            background: linear-gradient(135deg, var(--accent-color), var(--accent-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-size: 1.1rem;
+        }
+
+        #header-controls button {
+            font-size: 13px;
+            white-space: nowrap;
         }
 
         #user-grid {
@@ -146,12 +206,13 @@
             display: none;
             /* Hidden by default */
             flex-direction: column;
-            background: #000;
+            background: linear-gradient(180deg, #000 0%, rgba(15, 10, 25, 1) 100%);
             border-bottom: 2px solid var(--accent-color);
-            padding: 10px;
+            padding: 12px;
             text-align: center;
             height: 60%;
             /* Take up significant space */
+            position: relative;
         }
 
         #screen-stage video {
@@ -159,69 +220,148 @@
             height: 100%;
             object-fit: contain;
             border-radius: 8px;
+            cursor: pointer;
+        }
+
+        #screen-stage-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            padding: 0 5px;
         }
 
         #screen-stage-label {
             color: var(--accent-color);
             font-weight: bold;
-            margin-bottom: 5px;
         }
 
-        /* When stage is active, grid shrinks */
+        #fullscreen-btn {
+            width: auto;
+            padding: 6px 12px;
+            margin: 0;
+            font-size: 12px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #fff;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        #fullscreen-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Fullscreen mode styles */
+        #screen-stage:fullscreen {
+            height: 100%;
+            padding: 0;
+            background: #000;
+        }
+
+        #screen-stage:fullscreen video {
+            border-radius: 0;
+            height: calc(100% - 50px);
+        }
+
+        #screen-stage:fullscreen #screen-stage-header {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 10px 15px;
+            z-index: 10;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        #screen-stage:fullscreen:hover #screen-stage-header {
+            opacity: 1;
+        }
+
+        /* Webkit fullscreen support */
+        #screen-stage:-webkit-full-screen {
+            height: 100%;
+            padding: 0;
+        }
+
+        #screen-stage:-webkit-full-screen video {
+            border-radius: 0;
+            height: calc(100% - 50px);
+        }
+
+        /* When stage is active, hide grid completely */
         .stage-active #user-grid {
-            height: 40%;
-            flex-grow: 0;
-            border-top: 1px solid #333;
+            display: none;
+        }
+
+        .stage-active #screen-stage {
+            height: calc(100% - 70px);
         }
 
         /* User Card Styles */
         .user-card {
-            background: var(--card-bg);
-            padding: 15px;
-            border-radius: 10px;
+            background: rgba(18, 18, 26, 0.6);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: 16px;
             display: flex;
             flex-direction: column;
             align-items: center;
-            border: 1px solid #333;
-            transition: all 0.3s;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
             position: relative;
         }
 
         .user-card:hover {
-            border-color: #555;
+            border-color: var(--accent-color);
+            transform: translateY(-4px);
+            box-shadow: 0 12px 30px rgba(139, 92, 246, 0.15);
         }
 
         .avatar-img {
-            width: 64px;
-            height: 64px;
+            width: 72px;
+            height: 72px;
             border-radius: 50%;
-            border: 2px solid var(--accent-color);
-            margin-bottom: 10px;
-            background: #000;
+            border: 3px solid transparent;
+            background: linear-gradient(var(--card-bg), var(--card-bg)) padding-box,
+                        linear-gradient(135deg, var(--accent-color), var(--accent-secondary)) border-box;
+            margin-bottom: 12px;
             object-fit: cover;
+            transition: all 0.3s ease;
+        }
+
+        .user-card:hover .avatar-img {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px var(--glow-color);
         }
 
         .user-video {
             width: 100%;
             max-width: 250px;
-            border-radius: 8px;
-            margin-bottom: 10px;
-            border: 2px solid var(--accent-color);
-            background: #000;
+            border-radius: 12px;
+            margin-bottom: 12px;
+            border: 2px solid transparent;
+            background: linear-gradient(var(--card-bg), var(--card-bg)) padding-box,
+                        linear-gradient(135deg, var(--accent-color), var(--accent-secondary)) border-box;
             display: none;
         }
 
         .user-name {
-            font-weight: bold;
-            margin-bottom: 5px;
+            font-weight: 600;
+            margin-bottom: 6px;
+            font-size: 15px;
+            color: #fff;
         }
 
         .user-controls {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
             width: 100%;
-            margin-top: 10px;
+            margin-top: 12px;
         }
 
         input[type=range] {
@@ -229,50 +369,60 @@
             height: 4px;
             padding: 0;
             margin: 0;
-            background: #555;
+            background: rgba(255, 255, 255, 0.1);
             accent-color: var(--accent-color);
+            border-radius: 2px;
         }
 
         .mute-btn-small {
-            background: transparent;
-            border: 1px solid #555;
-            color: #ccc;
-            padding: 5px;
-            width: 30px;
-            height: 30px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #aaa;
+            padding: 6px;
+            width: 32px;
+            height: 32px;
             margin: 0;
             font-size: 14px;
-            border-radius: 4px;
+            border-radius: 8px;
+            transition: all 0.2s ease;
         }
 
         .mute-btn-small:hover {
-            background: #333;
+            background: rgba(139, 92, 246, 0.2);
+            border-color: var(--accent-color);
+            transform: none;
+            box-shadow: none;
         }
 
         .is-muted {
             color: var(--danger-color);
             border-color: var(--danger-color);
+            background: rgba(239, 68, 68, 0.1);
         }
 
         /* Kick Button */
         .kick-btn {
             position: absolute;
-            top: 10px;
-            right: 10px;
-            background: transparent;
-            border: none;
-            font-size: 16px;
+            top: 12px;
+            right: 12px;
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            font-size: 14px;
             cursor: pointer;
-            opacity: 0.5;
-            transition: 0.2s;
-            padding: 0;
-            width: 20px;
-            height: 20px;
+            opacity: 0.6;
+            transition: all 0.2s ease;
+            padding: 4px 6px;
+            width: auto;
+            height: auto;
+            border-radius: 6px;
         }
 
         .kick-btn:hover {
             opacity: 1;
-            transform: scale(1.1);
+            background: rgba(239, 68, 68, 0.2);
+            border-color: var(--danger-color);
+            transform: none;
+            box-shadow: 0 0 10px rgba(239, 68, 68, 0.3);
         }
 
         /* Right Side: Chat */
@@ -280,53 +430,211 @@
             flex: 1;
             min-width: 300px;
             max-width: 400px;
-            background: var(--chat-bg);
+            background: linear-gradient(180deg, var(--chat-bg) 0%, rgba(10, 10, 18, 1) 100%);
             display: flex;
             flex-direction: column;
-            border-left: 1px solid #333;
+            border-left: 1px solid var(--border-color);
+        }
+
+        /* Tab System */
+        .chat-tabs {
+            display: flex;
+            background: rgba(18, 18, 26, 0.8);
+            border-bottom: 1px solid var(--border-color);
+            padding: 0;
+        }
+
+        .chat-tab {
+            flex: 1;
+            padding: 14px 16px;
+            background: transparent;
+            border: none;
+            border-bottom: 2px solid transparent;
+            color: #888;
+            font-weight: 500;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 0;
+            border-radius: 0;
+        }
+
+        .chat-tab:hover {
+            color: #aaa;
+            background: rgba(255, 255, 255, 0.03);
+            transform: none;
+            box-shadow: none;
+        }
+
+        .chat-tab.active {
+            color: var(--accent-color);
+            border-bottom-color: var(--accent-color);
+            background: rgba(139, 92, 246, 0.05);
+        }
+
+        .tab-content {
+            display: none;
+            flex-grow: 1;
+            overflow-y: auto;
+        }
+
+        .tab-content.active {
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Participants List */
+        #participants-list {
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .participant-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.2s ease;
+        }
+
+        .participant-item:hover {
+            background: rgba(255, 255, 255, 0.06);
+            border-color: var(--border-color);
+        }
+
+        .participant-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 2px solid var(--accent-color);
+        }
+
+        .participant-info {
+            flex: 1;
+        }
+
+        .participant-name {
+            font-weight: 600;
+            font-size: 14px;
+            color: #fff;
+        }
+
+        .participant-status {
+            font-size: 11px;
+            color: #666;
+            margin-top: 2px;
+        }
+
+        .participant-badge {
+            background: linear-gradient(135deg, var(--accent-color), var(--accent-secondary));
+            color: white;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 10px;
+            font-weight: 600;
+        }
+
+        /* Reactions List */
+        #reactions-list {
+            padding: 16px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 10px;
+        }
+
+        .reaction-btn {
+            padding: 12px 16px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            color: #fff;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: center;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin: 0;
+            width: 100%;
+        }
+
+        .reaction-btn:hover {
+            background: rgba(139, 92, 246, 0.2);
+            border-color: var(--accent-color);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+        }
+
+        .reaction-btn:active {
+            transform: translateY(0);
         }
 
         #chat-messages {
             flex-grow: 1;
-            padding: 15px;
+            padding: 16px;
             overflow-y: auto;
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 12px;
         }
 
         .message {
             font-size: 14px;
-            line-height: 1.4;
+            line-height: 1.5;
             word-wrap: break-word;
+            padding: 10px 14px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .msg-time {
-            color: #666;
+            color: #555;
             font-size: 11px;
-            margin-right: 5px;
+            margin-right: 8px;
         }
 
         .msg-user {
-            color: var(--accent-color);
-            font-weight: bold;
-            margin-right: 5px;
+            background: linear-gradient(135deg, var(--accent-color), var(--accent-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 600;
+            margin-right: 6px;
         }
 
         .msg-system {
-            color: #888;
+            color: #666;
             font-style: italic;
             text-align: center;
             font-size: 12px;
-            margin: 5px 0;
+            margin: 8px 0;
+            padding: 8px;
+            background: rgba(139, 92, 246, 0.1);
+            border-radius: 8px;
+            border: 1px solid rgba(139, 92, 246, 0.2);
         }
 
         #chat-input-area {
-            padding: 15px;
-            background: var(--card-bg);
-            border-top: 1px solid #333;
+            padding: 16px;
+            background: rgba(18, 18, 26, 0.8);
+            backdrop-filter: blur(10px);
+            border-top: 1px solid var(--border-color);
             display: flex;
-            gap: 10px;
+            gap: 12px;
         }
 
         #message-input {
@@ -338,41 +646,49 @@
         #vote-modal {
             display: none;
             position: fixed;
-            top: 20px;
+            top: 30px;
             left: 50%;
             transform: translateX(-50%);
-            background: #2a2a2a;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.8);
+            background: rgba(18, 18, 26, 0.95);
+            backdrop-filter: blur(20px);
+            padding: 24px;
+            border-radius: 16px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), 0 0 30px rgba(239, 68, 68, 0.2);
             z-index: 4000;
             text-align: center;
-            border: 1px solid #444;
-            width: 300px;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            width: 320px;
+            animation: slideDown 0.3s ease;
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+            to { opacity: 1; transform: translateX(-50%) translateY(0); }
         }
 
         #vote-timer {
             height: 4px;
-            background: var(--accent-color);
+            background: linear-gradient(90deg, var(--accent-color), var(--accent-secondary));
             width: 100%;
-            margin-top: 10px;
+            margin-top: 12px;
             transition: width 30s linear;
+            border-radius: 2px;
         }
 
         .vote-actions {
             display: flex;
-            gap: 10px;
-            margin-top: 15px;
+            gap: 12px;
+            margin-top: 18px;
         }
 
         .vote-btn-yes {
-            background: var(--accent-color);
-            color: black;
+            background: linear-gradient(135deg, var(--accent-color), var(--accent-secondary));
+            color: white;
             flex: 1;
         }
 
         .vote-btn-no {
-            background: var(--danger-color);
+            background: linear-gradient(135deg, var(--danger-color), #dc2626);
             color: white;
             flex: 1;
         }
@@ -384,84 +700,147 @@
             left: 0;
             width: 100%;
             text-align: center;
-            padding: 8px;
+            padding: 10px;
             font-size: 12px;
-            color: rgba(255, 255, 255, 0.7);
-            background: rgba(18, 18, 18, 0.95);
+            color: rgba(255, 255, 255, 0.5);
+            background: rgba(10, 10, 15, 0.95);
+            backdrop-filter: blur(10px);
             z-index: 5000;
-            border-top: 1px solid #333;
+            border-top: 1px solid var(--border-color);
         }
 
         .developer-footer a {
-            color: inherit;
+            background: linear-gradient(135deg, var(--accent-color), var(--accent-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
             text-decoration: none;
-            font-weight: bold;
-            transition: color 0.3s;
+            font-weight: 600;
+            transition: all 0.3s;
         }
 
         .developer-footer a:hover {
-            color: var(--accent-color);
+            filter: brightness(1.2);
         }
 
         /* Settings Toggle */
         .settings-area {
             display: flex;
             align-items: center;
-            gap: 10px;
-            margin-top: 10px;
-            font-size: 12px;
-            color: #aaa;
+            gap: 12px;
+            margin-top: 16px;
+            font-size: 13px;
+            color: #888;
         }
 
         .checkbox-wrapper {
             display: flex;
             align-items: center;
-            gap: 5px;
+            gap: 6px;
             cursor: pointer;
+            padding: 6px 10px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .checkbox-wrapper:hover {
+            background: rgba(255, 255, 255, 0.06);
+        }
+
+        .checkbox-wrapper input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            margin: 0;
+            padding: 0;
+            accent-color: var(--accent-color);
         }
 
         /* Toast Notification */
         #notification-toast {
             display: none;
             position: fixed;
-            top: 70px;
+            top: 80px;
             left: 50%;
             transform: translateX(-50%);
-            background: var(--accent-color);
-            color: black;
-            padding: 12px 20px;
-            border-radius: 8px;
-            font-weight: bold;
+            background: linear-gradient(135deg, var(--accent-color), var(--accent-secondary));
+            color: white;
+            padding: 14px 24px;
+            border-radius: 12px;
+            font-weight: 600;
             z-index: 6000;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 10px 30px rgba(139, 92, 246, 0.4);
             cursor: pointer;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 10px 30px rgba(139, 92, 246, 0.4); }
+            50% { box-shadow: 0 10px 40px rgba(139, 92, 246, 0.6); }
         }
 
         /* Mobile Responsive */
         @media (max-width: 768px) {
             #app-container {
                 flex-direction: column;
-                padding-bottom: 30px;
+                padding-bottom: 35px;
             }
 
             #chat-panel {
                 max-width: none;
                 height: 40%;
                 min-height: 200px;
+                border-left: none;
+                border-top: 1px solid var(--border-color);
             }
 
             #main-content {
                 height: 60%;
+                border-right: none;
+            }
+
+            .login-box {
+                width: 90%;
+                max-width: 340px;
+                padding: 2rem;
+            }
+
+            .user-card {
+                padding: 16px;
+            }
+
+            #user-grid {
+                gap: 12px;
+                padding: 16px;
+            }
+
+            header {
+                padding: 10px 15px;
+            }
+
+            header h3 {
+                font-size: 1rem;
+            }
+
+            #header-controls button {
+                padding: 6px 12px;
+                font-size: 12px;
             }
         }
 
         .main-controls {
-            padding: 15px;
+            padding: 18px;
             display: flex;
             justify-content: center;
-            gap: 15px;
-            background: var(--card-bg);
-            border-top: 1px solid #333;
+            gap: 16px;
+            background: rgba(18, 18, 26, 0.8);
+            backdrop-filter: blur(10px);
+            border-top: 1px solid var(--border-color);
+        }
+
+        .main-controls button {
+            border-radius: 12px;
+            font-size: 14px;
         }
     </style>
 </head>
@@ -517,43 +896,72 @@
         <!-- Video/User Section -->
         <div id="main-content">
             <header>
-                <h3 id="room-display" style="margin:0">Oda: ...</h3>
-                <div style="display:flex; gap:15px; align-items:center;">
-                    <label class="checkbox-wrapper" title="Giriş/Çıkış Sesleri">
+                <div style="display:flex; align-items:center; gap:15px;">
+                    <h3 id="room-display" style="margin:0">Oda: ...</h3>
+                    <label class="checkbox-wrapper" title="Giriş/Çıkış Sesleri" style="margin:0; padding:4px 8px;">
                         <input type="checkbox" id="sound-toggle-main" checked onchange="syncSoundToggle(this)"> 🔔
                     </label>
-                    <div style="font-size:12px; color:#888;">🟢 Bağlandı</div>
+                </div>
+                
+                <!-- Control Buttons -->
+                <div id="header-controls" style="display:flex; gap:10px; align-items:center;">
+                    <button onclick="toggleScreenShare()" id="btn-share-screen-header" title="Ekran Paylaş" style="width:auto; margin:0; padding:8px 16px; display:none;">
+                        🖥️ Ekran Paylaş
+                    </button>
+                    <button onclick="toggleMyMute()" id="my-mute-btn" style="width:auto; margin:0; padding:8px 16px;">
+                        🎤 Sustur
+                    </button>
+                    <button onclick="window.location.reload()" style="background:linear-gradient(135deg, var(--danger-color), #dc2626); width:auto; margin:0; padding:8px 16px;">
+                        🚪 Ayrıl
+                    </button>
                 </div>
             </header>
 
             <!-- Stage for Cinema Mode -->
             <div id="screen-stage">
-                <div id="screen-stage-label">🖥️ Ekran Paylaşımı</div>
-                <video id="stage-video" autoplay playsinline></video>
+                <div id="screen-stage-header">
+                    <div id="screen-stage-label">🖥️ Ekran Paylaşımı</div>
+                    <button id="fullscreen-btn" onclick="toggleFullscreen()">⛶ Tam Ekran</button>
+                </div>
+                <video id="stage-video" autoplay playsinline ondblclick="toggleFullscreen()"></video>
             </div>
 
             <div id="user-grid">
-            </div>
-
-            <div class="main-controls">
-                <button onclick="toggleMyMute()" id="my-mute-btn" style="width:auto; margin:0; padding:10px 25px;">
-                    🎤 Sustur
-                </button>
-                <button onclick="window.location.reload()"
-                    style="background:var(--danger-color); width:auto; margin:0; padding:10px 25px;">
-                    🚪 Ayrıl
-                </button>
             </div>
         </div>
 
         <!-- Chat Section -->
         <div id="chat-panel">
-            <div id="chat-messages">
-                <div class="msg-system">Sohbete hoş geldiniz!</div>
+            <!-- Tab Navigation -->
+            <div class="chat-tabs">
+                <button class="chat-tab active" onclick="switchTab('chat')">💬 Sohbet</button>
+                <button class="chat-tab" onclick="switchTab('participants')">👥 Katılımcılar (<span id="participant-count">0</span>)</button>
+                <button class="chat-tab" onclick="switchTab('reactions')">😂 Tepkiler</button>
             </div>
-            <div id="chat-input-area">
-                <input type="text" id="message-input" placeholder="Bir mesaj yaz..." onkeypress="handleEnter(event)">
-                <button onclick="sendMessage()" style="width: auto; margin:0;">Gönder</button>
+
+            <!-- Chat Tab Content -->
+            <div id="chat-tab-content" class="tab-content active">
+                <div id="chat-messages">
+                    <div class="msg-system">Sohbete hoş geldiniz!</div>
+                </div>
+                <div id="chat-input-area">
+                    <input type="text" id="message-input" placeholder="Bir mesaj yaz..." onkeypress="handleEnter(event)">
+                    <button onclick="sendMessage()" style="width: auto; margin:0;">Gönder</button>
+                </div>
+            </div>
+
+            <!-- Participants Tab Content -->
+            <div id="participants-tab-content" class="tab-content">
+                <div id="participants-list">
+                    <!-- Participants will be added dynamically -->
+                </div>
+            </div>
+
+            <!-- Reactions Tab Content -->
+            <div id="reactions-tab-content" class="tab-content">
+                <div id="reactions-list">
+                    <!-- Reactions will be loaded dynamically -->
+                </div>
             </div>
         </div>
     </div>
@@ -564,9 +972,9 @@
     </div>
 
     <script>
-        // --- Sounds (Base64) ---
-        const SOUND_JOIN = "data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbqWEyM2KonIyHaTczYKiTipdoNjNgqJOJl2g3M2Cok4mXaDczYKiTipdoNjNgqJOJl2g3M2Cok4mXaDczYKiTipdoNjNgqJOJl2g3M2Cok4mXaDczYAAAAAA=";
-        const SOUND_LEAVE = "data:audio/wav;base64,UklGRlVsAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQ1sAAB1d3mDeXN1d3mDeXN1d3mDeXN1d3mDeXN1d3mDeXN1d3mDeXN1d3mDAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
+        // --- Sound Files ---
+        const SOUND_JOIN = '/sounds/join.mp3';
+        const SOUND_LEAVE = '/sounds/disconnect.mp3';
 
         // --- Globals ---
         let socket;
@@ -581,6 +989,7 @@
         let isListener = false;
         const nicknames = {};
         const activeCalls = {}; // Keep track of active MediaConnections
+        let currentScreenSharerId = null; // Track who is sharing screen
 
         // --- Init ---
         window.onload = async function () {
@@ -629,11 +1038,148 @@
             if (loginToggle) loginToggle.checked = el.checked;
         }
 
+        // --- Tab Switching ---
+        function switchTab(tabName) {
+            // Update tab buttons
+            document.querySelectorAll('.chat-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            // Update tab content
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+
+            if (tabName === 'chat') {
+                document.getElementById('chat-tab-content').classList.add('active');
+            } else if (tabName === 'participants') {
+                document.getElementById('participants-tab-content').classList.add('active');
+            } else if (tabName === 'reactions') {
+                document.getElementById('reactions-tab-content').classList.add('active');
+            }
+        }
+
+        // --- Reactions Management ---
+        let currentReactionAudio = null; // Track currently playing reaction
+
+        async function loadReactions() {
+            try {
+                const response = await fetch('/api/tepkiler');
+                const reactions = await response.json();
+                
+                const list = document.getElementById('reactions-list');
+                list.innerHTML = '';
+                
+                if (reactions.length === 0) {
+                    list.innerHTML = '<div style="text-align:center; color:#666; padding:20px;">Henüz tepki eklenmemiş</div>';
+                    return;
+                }
+                
+                reactions.forEach(reaction => {
+                    const btn = document.createElement('button');
+                    btn.className = 'reaction-btn';
+                    btn.textContent = reaction.name;
+                    btn.title = reaction.name;
+                    btn.onclick = () => playReaction(reaction.url, reaction.name);
+                    list.appendChild(btn);
+                });
+            } catch (err) {
+                console.error('Error loading reactions:', err);
+            }
+        }
+
+        function playReaction(url, name) {
+            if (!socket) return;
+            
+            // Send to server to broadcast to everyone
+            socket.emit('play-reaction', url);
+        }
+
+        function playReactionSound(url, userName) {
+            try {
+                // Stop currently playing reaction if exists
+                if (currentReactionAudio) {
+                    currentReactionAudio.pause();
+                    currentReactionAudio.currentTime = 0;
+                    currentReactionAudio = null;
+                }
+
+                // Create and play new audio
+                const audio = new Audio(url);
+                audio.volume = 0.7;
+                currentReactionAudio = audio;
+
+                // Clear reference when audio ends
+                audio.onended = () => {
+                    if (currentReactionAudio === audio) {
+                        currentReactionAudio = null;
+                    }
+                };
+
+                audio.play().catch(e => console.log("Reaction play blocked", e));
+                
+                // Show notification in chat
+                addSystemMsg(`${userName} bir tepki gönderdi 🎵`);
+            } catch (err) {
+                console.error('Error playing reaction:', err);
+            }
+        }
+
+        // --- Participant List Management ---
+        function updateParticipantsList() {
+            const list = document.getElementById('participants-list');
+            const count = document.getElementById('participant-count');
+            
+            list.innerHTML = '';
+            const participantCount = Object.keys(nicknames).length;
+            count.textContent = participantCount;
+
+            // Add self first
+            if (myPeer && myPeer.id) {
+                const cleanName = encodeURIComponent(myNickname);
+                const avatarUrl = `https://robohash.org/${cleanName}?set=set1&size=40x40&bgset=bg1`;
+                const isSharing = localScreenStream !== null;
+                
+                const item = document.createElement('div');
+                item.className = 'participant-item';
+                item.innerHTML = `
+                    <img src="${avatarUrl}" class="participant-avatar" alt="Avatar">
+                    <div class="participant-info">
+                        <div class="participant-name">${myNickname} ${isSharing ? '🖥️' : ''}</div>
+                        <div class="participant-status">${isListener ? '🔇 Dinleyici' : '🎤 Konuşuyor'}</div>
+                    </div>
+                    <span class="participant-badge">SEN</span>
+                `;
+                list.appendChild(item);
+            }
+
+            // Add other participants
+            Object.entries(nicknames).forEach(([peerId, name]) => {
+                if (myPeer && peerId === myPeer.id) return; // Skip self
+                
+                const cleanName = encodeURIComponent(name);
+                const avatarUrl = `https://robohash.org/${cleanName}?set=set1&size=40x40&bgset=bg1`;
+                const isSharing = currentScreenSharerId === peerId;
+                
+                const item = document.createElement('div');
+                item.className = 'participant-item';
+                item.innerHTML = `
+                    <img src="${avatarUrl}" class="participant-avatar" alt="Avatar">
+                    <div class="participant-info">
+                        <div class="participant-name">${name} ${isSharing ? '🖥️' : ''}</div>
+                        <div class="participant-status">🎤 Bağlı</div>
+                    </div>
+                `;
+                list.appendChild(item);
+            });
+        }
+
         function playSound(type) {
             if (!soundsEnabled) return;
             try {
                 const audio = new Audio(type === 'join' ? SOUND_JOIN : SOUND_LEAVE);
-                audio.volume = 0.3;
+                audio.volume = 0.5; // Increased volume for better audibility
                 audio.play().catch(e => console.log("Audio play blocked", e));
             } catch (e) { console.error(e); }
         }
@@ -767,6 +1313,8 @@
 
                 addSystemMsg(`${roomId} odasına katıldınız`);
                 playSound('join');
+                updateParticipantsList();
+                loadReactions();
             });
 
             socket.on('existing-users', (userList) => {
@@ -774,6 +1322,7 @@
                 for (const [pid, name] of Object.entries(userList)) {
                     updateUserCardName(pid, name);
                 }
+                updateParticipantsList();
             });
 
             socket.on('error', msg => { alert("Hata: " + msg); window.location.reload(); });
@@ -782,6 +1331,7 @@
                 nicknames[uid] = name;
                 addSystemMsg(`${name} odaya katıldı`);
                 playSound('join');
+                updateParticipantsList();
                 // Yeni geleni biz arıyoruz
                 const streamToCall = localScreenStream ? localScreenStream : myStream;
                 const call = myPeer.call(uid, streamToCall);
@@ -812,8 +1362,11 @@
             });
 
             socket.on('user-disconnected', uid => {
+                const userName = nicknames[uid] || "Kullanıcı";
+                addSystemMsg(`${userName} odadan ayrıldı`);
                 removeUser(uid);
                 delete nicknames[uid];
+                updateParticipantsList();
             });
 
             // Vote Events
@@ -834,11 +1387,15 @@
             });
 
             socket.on('share-started', (sharerId) => {
+                currentScreenSharerId = sharerId;
                 lockShareButton(sharerId);
+                updateParticipantsList();
             });
 
             socket.on('share-ended', () => {
+                currentScreenSharerId = null;
                 unlockShareButton();
+                updateParticipantsList();
                 // Also ensure stage is closed if logic failed elsewhere
                 closeStage();
             });
@@ -850,8 +1407,13 @@
             socket.on('share-denied', () => {
                 alert("Şu anda başkası ekran paylaşıyor. Lütfen bekleyin.");
                 // Reset button state
-                const btn = document.getElementById('btn-share-screen');
+                const btn = document.getElementById('btn-share-screen-header');
                 if (btn) btn.classList.remove('loading'); // If we had loading state
+            });
+
+            // Reaction Events
+            socket.on('reaction-played', (data) => {
+                playReactionSound(data.url, data.user);
             });
         }
 
@@ -1000,18 +1562,15 @@
                 // Self Controls
                 const statusText = isListener ? "( Ben - 🔇 Dinleyici )" : "( Ben )";
 
-                // Screen Share Button Logic
-                // Only show if not listener AND if supported (Not Mobile)
-                let screenShareBtn = '';
+                // Show screen share button in header if not mobile and not listener
                 const isMobile = !navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia;
-
                 if (!isListener && !isMobile) {
-                    screenShareBtn = `<button class="mute-btn-small" onclick="toggleScreenShare()" id="btn-share-screen" title="Ekran Paylaş" style="width:auto; padding:5px 10px;">🖥️</button>`;
+                    const headerBtn = document.getElementById('btn-share-screen-header');
+                    if (headerBtn) headerBtn.style.display = 'block';
                 }
 
                 controlsHtml = `
                     <div class="user-controls" style="justify-content:center; gap:10px; margin-top:15px;">
-                       ${screenShareBtn}
                        <span style="font-size:12px; color:#555; align-self:center;">${statusText}</span>
                     </div>`;
             }
@@ -1095,15 +1654,22 @@
                 tracks.forEach(t => t.enabled = enabled);
 
                 const btn = document.getElementById('my-mute-btn');
-                btn.innerText = enabled ? "🎤 Sustur" : "🔴 Sesi Aç";
-                btn.style.background = enabled ? "var(--bg-card)" : "var(--danger-color)";
+                if (enabled) {
+                    btn.innerText = "🎤 Sustur";
+                    btn.style.background = "linear-gradient(135deg, var(--accent-color), var(--accent-secondary))";
+                    btn.style.color = "#fff";
+                } else {
+                    btn.innerText = "🔴 Sesi Aç";
+                    btn.style.background = "linear-gradient(135deg, var(--danger-color), #dc2626)";
+                    btn.style.color = "#fff";
+                }
             }
         }
 
         // --- Screen Share Logic ---
         async function toggleScreenShare() {
-            const btn = document.getElementById('btn-share-screen');
-            if (btn.disabled) return;
+            const btn = document.getElementById('btn-share-screen-header');
+            if (btn && btn.disabled) return;
 
             if (!localScreenStream) {
                 // Request Permission from Server first
@@ -1116,7 +1682,7 @@
 
         async function startScreenShareActual() {
             try {
-                const btn = document.getElementById('btn-share-screen');
+                const btn = document.getElementById('btn-share-screen-header');
                 // 1. Get Screen Stream (Request Audio!)
                 const displayStream = await navigator.mediaDevices.getDisplayMedia({
                     video: true,
@@ -1178,12 +1744,14 @@
                 // Usually self-preview is muted. If user wants to hear system audio they hear it from source app.
                 enableStage(localScreenStream, myNickname, myPeer.id);
 
-                btn.classList.add('is-muted');
-                btn.style.background = "var(--accent-color)";
-                btn.style.color = "black";
+                if (btn) {
+                    btn.innerText = "⏹️ Paylaşımı Durdur";
+                    btn.style.background = "linear-gradient(135deg, var(--danger-color), #dc2626)";
+                }
 
                 // 6. Re-Call everyone
                 reCallAllPeers(localScreenStream);
+                updateParticipantsList();
 
             } catch (err) {
                 console.error("Screen share error:", err);
@@ -1217,15 +1785,15 @@
             disableStage();
 
             // 5. Reset Button
-            const btn = document.getElementById('btn-share-screen');
+            const btn = document.getElementById('btn-share-screen-header');
             if (btn) {
-                btn.classList.remove('is-muted');
+                btn.innerText = "🖥️ Ekran Paylaş";
                 btn.style.background = "";
-                btn.style.color = "";
             }
 
             // 6. Re-Call everyone with Processed Audio Stream (myStream)
             reCallAllPeers(myStream);
+            updateParticipantsList();
         }
 
         // --- Cinema Mode Helpers ---
@@ -1265,11 +1833,50 @@
             disableStage();
         }
 
+        // --- Fullscreen Logic ---
+        function toggleFullscreen() {
+            const stage = document.getElementById('screen-stage');
+            const btn = document.getElementById('fullscreen-btn');
+            
+            if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+                // Enter fullscreen
+                if (stage.requestFullscreen) {
+                    stage.requestFullscreen();
+                } else if (stage.webkitRequestFullscreen) {
+                    stage.webkitRequestFullscreen();
+                }
+                btn.innerText = '✕ Çık';
+            } else {
+                // Exit fullscreen
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                } else if (document.webkitExitFullscreen) {
+                    document.webkitExitFullscreen();
+                }
+                btn.innerText = '⛶ Tam Ekran';
+            }
+        }
+
+        // Update button text when exiting fullscreen via ESC key
+        document.addEventListener('fullscreenchange', () => {
+            const btn = document.getElementById('fullscreen-btn');
+            if (btn) {
+                btn.innerText = document.fullscreenElement ? '✕ Çık' : '⛶ Tam Ekran';
+            }
+        });
+
+        document.addEventListener('webkitfullscreenchange', () => {
+            const btn = document.getElementById('fullscreen-btn');
+            if (btn) {
+                btn.innerText = document.webkitFullscreenElement ? '✕ Çık' : '⛶ Tam Ekran';
+            }
+        });
+
         function lockShareButton(sharerId) {
-            const btn = document.getElementById('btn-share-screen');
+            const btn = document.getElementById('btn-share-screen-header');
             if (!btn) return;
 
-            if (myPeer.id === sharerId) return; // Don't lock for self (handled by state)
+            if (myPeer && myPeer.id === sharerId) return; // Don't lock for self (handled by state)
 
             btn.disabled = true;
             btn.title = "Başka biri ekran paylaşıyor";
@@ -1278,7 +1885,7 @@
         }
 
         function unlockShareButton() {
-            const btn = document.getElementById('btn-share-screen');
+            const btn = document.getElementById('btn-share-screen-header');
             if (!btn) return;
 
             btn.disabled = false;
