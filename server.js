@@ -1,11 +1,11 @@
 const express = require('express');
 const app = express();
 const server = require('http').Server(app);
+const helmet = require('helmet');
 const io = require('socket.io')(server, {
   cors: {
-    origin: '*',
-    methods: ['GET', 'POST'],
-    credentials: true
+    origin: false,
+    methods: ['GET', 'POST']
   },
   transports: ['polling', 'websocket']
 });
@@ -22,6 +22,40 @@ const roomVotes = {};           // { roomId: { targetId, targetName, yes, no, vo
 const roomCooldowns = {};       // { roomId: timestamp }
 const bannedIPs = {};           // { ip: expireTimestamp }
 const socketMap = {};           // { socketId: { roomId, peerId } } -- Critical for Ghost User Fix
+const rateLimits = {};          // { socketId: { chat: timestamp, reaction: timestamp } }
+
+const MAX_NICKNAME_LENGTH = 30;
+const MAX_MESSAGE_LENGTH = 500;
+const CHAT_RATE_LIMIT_MS = 1000;    // 1 message per second
+const REACTION_RATE_LIMIT_MS = 3000; // 1 reaction per 3 seconds
+
+// Helper: Sanitize string to prevent XSS
+function sanitizeString(str) {
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#x27;");
+}
+
+// Helper: Validate nickname
+function validateNickname(name) {
+  if (typeof name !== 'string') return 'Misafir';
+  const trimmed = name.trim().slice(0, MAX_NICKNAME_LENGTH);
+  return trimmed || 'Misafir';
+}
+
+// Helper: Check rate limit (returns true if rate-limited)
+function isRateLimited(socketId, action, limitMs) {
+  if (!rateLimits[socketId]) rateLimits[socketId] = {};
+  const now = Date.now();
+  if (rateLimits[socketId][action] && (now - rateLimits[socketId][action]) < limitMs) {
+    return true;
+  }
+  rateLimits[socketId][action] = now;
+  return false;
+}
 
 // Helper: Robust IP Detection
 function getClientIP(socket) {
@@ -64,6 +98,21 @@ function loadRooms() {
 loadRooms();
 
 // Middleware
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "https://unpkg.com"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", "https://robohash.org"],
+      connectSrc: ["'self'", "wss:", "ws:"],
+      mediaSrc: ["'self'"],
+      fontSrc: ["'self'"],
+      objectSrc: ["'none'"],
+      frameAncestors: ["'none'"]
+    }
+  }
+}));
 app.use(express.static('public'));
 app.use(express.json());
 
@@ -71,7 +120,7 @@ app.use(express.json());
 const peerServer = ExpressPeerServer(server, {
   debug: true,
   path: '/',
-  allow_discovery: true
+  allow_discovery: false
 });
 
 app.use('/peerjs', peerServer);
@@ -159,6 +208,9 @@ io.on('connection', socket => {
       return;
     }
 
+    // Validate and sanitize nickname
+    nickname = sanitizeString(validateNickname(nickname));
+
     console.log(`[Socket] User ${nickname} joining ${roomId}`);
     socket.join(roomId);
     socket.peerId = peerId; // STORE PEER ID ON SOCKET FOR BAN LOGIC
@@ -196,7 +248,8 @@ io.on('connection', socket => {
 
     // Chat Handler
     socket.on('chat-message', (msg) => {
-      const cleanMsg = String(msg).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      if (isRateLimited(socket.id, 'chat', CHAT_RATE_LIMIT_MS)) return;
+      const cleanMsg = sanitizeString(String(msg).slice(0, MAX_MESSAGE_LENGTH));
       io.to(roomId).emit('chat-message', {
         user: nickname,
         text: cleanMsg,
@@ -206,6 +259,12 @@ io.on('connection', socket => {
 
     // Reaction Handler
     socket.on('play-reaction', (reactionUrl) => {
+      if (isRateLimited(socket.id, 'reaction', REACTION_RATE_LIMIT_MS)) return;
+      // Validate that the reaction URL is a safe local path
+      if (typeof reactionUrl !== 'string' || !reactionUrl.startsWith('/tepkiler/')) return;
+      const resolved = path.resolve(path.join(__dirname, 'public', reactionUrl));
+      const allowed = path.resolve(path.join(__dirname, 'public', 'tepkiler'));
+      if (!resolved.startsWith(allowed)) return;
       // Broadcast to everyone in the room including sender
       io.to(roomId).emit('reaction-played', {
         user: nickname,
@@ -299,6 +358,7 @@ io.on('connection', socket => {
 
         // Cleanup Map
         delete socketMap[socket.id];
+        delete rateLimits[socket.id];
       }
     });
   });

@@ -876,7 +876,7 @@
     <div id="login-overlay">
         <div class="login-box">
             <h2>🎙️ Sesli Sohbet</h2>
-            <input type="text" id="nickname-input" placeholder="Kullanıcı Adı" value="Misafir">
+            <input type="text" id="nickname-input" placeholder="Kullanıcı Adı" value="Misafir" maxlength="30">
             <select id="room-select" onchange="checkRoomLock()">
                 <option value="" disabled selected>Odalar Yükleniyor...</option>
             </select>
@@ -945,7 +945,7 @@
                     <div class="msg-system">Sohbete hoş geldiniz!</div>
                 </div>
                 <div id="chat-input-area">
-                    <input type="text" id="message-input" placeholder="Bir mesaj yaz..." onkeypress="handleEnter(event)">
+                    <input type="text" id="message-input" placeholder="Bir mesaj yaz..." onkeypress="handleEnter(event)" maxlength="500">
                     <button onclick="sendMessage()" style="width: auto; margin:0;">Gönder</button>
                 </div>
             </div>
@@ -990,6 +990,13 @@
         const nicknames = {};
         const activeCalls = {}; // Keep track of active MediaConnections
         let currentScreenSharerId = null; // Track who is sharing screen
+
+        // Helper: Escape HTML to prevent XSS
+        function escapeHtml(str) {
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
 
         // --- Init ---
         window.onload = async function () {
@@ -1146,7 +1153,7 @@
                 item.innerHTML = `
                     <img src="${avatarUrl}" class="participant-avatar" alt="Avatar">
                     <div class="participant-info">
-                        <div class="participant-name">${myNickname} ${isSharing ? '🖥️' : ''}</div>
+                        <div class="participant-name">${escapeHtml(myNickname)} ${isSharing ? '🖥️' : ''}</div>
                         <div class="participant-status">${isListener ? '🔇 Dinleyici' : '🎤 Konuşuyor'}</div>
                     </div>
                     <span class="participant-badge">SEN</span>
@@ -1167,7 +1174,7 @@
                 item.innerHTML = `
                     <img src="${avatarUrl}" class="participant-avatar" alt="Avatar">
                     <div class="participant-info">
-                        <div class="participant-name">${name} ${isSharing ? '🖥️' : ''}</div>
+                        <div class="participant-name">${escapeHtml(name)} ${isSharing ? '🖥️' : ''}</div>
                         <div class="participant-status">🎤 Bağlı</div>
                     </div>
                 `;
@@ -1353,7 +1360,16 @@
             socket.on('chat-message', (data) => {
                 const div = document.createElement('div');
                 div.className = 'message';
-                div.innerHTML = `<span class="msg-time">${data.time}</span><span class="msg-user">${data.user}:</span> ${data.text}`;
+                const timeSpan = document.createElement('span');
+                timeSpan.className = 'msg-time';
+                timeSpan.textContent = data.time;
+                const userSpan = document.createElement('span');
+                userSpan.className = 'msg-user';
+                userSpan.textContent = data.user + ':';
+                const textNode = document.createTextNode(' ' + data.text);
+                div.appendChild(timeSpan);
+                div.appendChild(userSpan);
+                div.appendChild(textNode);
                 const box = document.getElementById('chat-messages');
                 if (box) {
                     box.appendChild(div);
@@ -1551,8 +1567,9 @@
 
             let controlsHtml = '';
             if (!isMe) {
+                const escapedName = escapeHtml(name).replace(/'/g, "&#x27;");
                 controlsHtml = `
-                    <button class="kick-btn" title="Oylama Başlat" onclick="startVote('${uid}', '${name}')">⚠️</button>
+                    <button class="kick-btn" title="Oylama Başlat" onclick="startVote('${uid}', '${escapedName}')">⚠️</button>
                     <div class="user-controls">
                         <button class="mute-btn-small" onclick="toggleUserMute('${uid}')" id="mute-btn-${uid}">🔊</button>
                         <input type="range" min="0" max="1" step="0.1" value="1" oninput="setVolume('${uid}', this.value)">
@@ -1578,7 +1595,7 @@
             card.innerHTML = `
                 <video id="video-${uid}" class="user-video" autoplay playsinline ${isMe ? 'muted' : ''}></video>
                 <img src="${avatarUrl}" class="avatar-img" alt="Avatar" id="avatar-${uid}">
-                <div class="user-name" id="name-${uid}">${name}</div>
+                <div class="user-name" id="name-${uid}">${escapeHtml(name)}</div>
                 ${controlsHtml}
             `;
             grid.appendChild(card);
