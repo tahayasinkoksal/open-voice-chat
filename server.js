@@ -99,7 +99,19 @@ loadRooms();
 
 // Middleware
 app.use(helmet({
-  contentSecurityPolicy: false // Disabled to allow inline scripts in the SPA
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "https://unpkg.com"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", "https://robohash.org"],
+      connectSrc: ["'self'", "wss:", "ws:"],
+      mediaSrc: ["'self'"],
+      fontSrc: ["'self'"],
+      objectSrc: ["'none'"],
+      frameAncestors: ["'none'"]
+    }
+  }
 }));
 app.use(express.static('public'));
 app.use(express.json());
