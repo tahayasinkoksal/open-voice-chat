@@ -248,8 +248,11 @@ io.on('connection', socket => {
     // Reaction Handler
     socket.on('play-reaction', (reactionUrl) => {
       if (isRateLimited(socket.id, 'reaction', REACTION_RATE_LIMIT_MS)) return;
-      // Validate that the reaction URL is a local path
-      if (typeof reactionUrl !== 'string' || !reactionUrl.startsWith('/tepkiler/') || reactionUrl.includes('..')) return;
+      // Validate that the reaction URL is a safe local path
+      if (typeof reactionUrl !== 'string' || !reactionUrl.startsWith('/tepkiler/')) return;
+      const resolved = path.resolve(path.join(__dirname, 'public', reactionUrl));
+      const allowed = path.resolve(path.join(__dirname, 'public', 'tepkiler'));
+      if (!resolved.startsWith(allowed)) return;
       // Broadcast to everyone in the room including sender
       io.to(roomId).emit('reaction-played', {
         user: nickname,
